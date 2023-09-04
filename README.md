@@ -29,7 +29,7 @@ public class Loader {
 }
 ```
 
-When loading a Java agent, you can do this 2 different ways, with the `attach` method in the `VirtualMachine` class, or with a command line argument. We intend to attach our agent to a running Java program, rather than a program which we have programmed to attach an agent. As a result, we can use byte-buddy-agent https://github.com/raphw/byte-buddy (v. 1.14.2 is the current version at the time of writing this) to attach an agent to a running jar.
+When loading a Java agent, you can do this 2 different ways, with the `attach` method in the `VirtualMachine` class, or with a command line argument. We intend to attach our agent to a running Java program, rather than a program which we have programmed to attach an agent. As we are attempting to edit java bytecode dynamically, we will be using the handy `VirtualMachine.attach` method.
 <h2>Attaching to a running process</h2>
 To find a Java process running on any JVM on our machine, we can use the `VirtualMachine` class. In order to access this class, you may need to disable `com.sun.*` type filters on your IDE of choice.
 
@@ -39,7 +39,7 @@ for (VirtualMachineDescriptor vm : VirtualMachine.list()) {
 }
 ```
 
-The `VirtualMachineDescripter` class has two methods which we can use, `displayName` and `id`. The `displayName` function returns a String representation of how the Java application was run. If the program was run with the `-jar` option, it will include the name of the jar file and the command-line arguments. If it was run with the `-classpath` option, it will return the name of the main class, the entrypoint of the jar. We can then use the `attach` static method in the `ByteBuddyAgent` class, to attach our Java agent to the process. Our loader main class should look something like this now.
+The `VirtualMachineDescripter` class has two methods which we can use, `displayName` and `id`. The `displayName` function returns a String representation of how the Java application was run. If the program was run with the `-jar` option, it will include the name of the jar file and the command-line arguments. If it was run with the `-classpath` option, it will return the name of the main class, the entrypoint of the jar. Attaching an agent with the sun attach libraries works as follows:
 
 ```java
 import java.io.File;
@@ -47,23 +47,24 @@ import java.io.File;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 
-import net.bytebuddy.agent.ByteBuddyAgent;
-
 public class Loader {
 
-	public static void main(String[] args) {
-		for (VirtualMachineDescriptor vm : VirtualMachine.list()) {
-			if (vm.displayName().startsWith("name of jar or main class name")) {
-				ByteBuddyAgent.attach(new File("path/to/the/agent.jar"), vm.id());
+	public static void main(String[] args) throws Exception {
+		for (VirtualMachineDescriptor vmd : VirtualMachine.list()) {
+			if (vmd.displayName().startsWith("name of jar or main class name")) {
+				VirtualMachine vm = VirtualMachine.attach(vmd.id());
+				vm.loadAgent(new File("path/to/your/agent.jar"), "this is the argument that will be passed into your agentmain method");
+				vm.detach();
 			}
 		}
 	}
 }
 ```
+!!! IMPORTANT !!! Using the `attach` method dynamically at runtime can throw quite a few errors, and it is important to properly handle these errors. For simplicity, we will just be adding a blanket `throws` clause to our `main` method.
 
 Optionally, we can add a String argument to the `attach` method, which will get passed to the agent in the args parameter of our agentmain agent entrypoint.
 <h2>Compiling our agent</h2>
-Once we have our loader written, we can compile our agent jar file. Agents are compiled just as any other Java program is, only we must change the `META-INF/MANIFEST.MF` file to include these lines as well as the mandatory values.
+Once we have our loader written, we can compile our agent jar file. Agents are compiled just as any other Java program is, only we must change the `META-INF/MANIFEST.MF` file inside our agent jar to include these lines as well as the normal mandatory values.
 
 ```
 Agent-Class: example.Agent
@@ -81,7 +82,7 @@ ClassFileTransformer transformer = new ClassFileTransformer() {
 };
 ```
 
-The `classfileBuffer` parameter is the bytecode bytes of the class being transformed, where the return value will be the transformed bytecode of the class. We can use Java ASM and ASM-Tree in order to easily interpret the bytecode, and write it back out as a `byte[]`, returning the class changed with ASM. We finally then need to register the transformer with the `Instrumentation` class in our entrypoint method.
+The `classfileBuffer` parameter is the bytecode bytes of the class being transformed, where the return value will be the transformed bytecode of the class. We can use Java ASM in order to easily interpret the bytecode, and write it back out as a `byte[]` (the returned value of the method). We finally then need to register the transformer with the `Instrumentation` class in the entrypoint method of our agent, and transform the class(es) we wish to change.
 
 ```java
 instrumentation.addTransformer(transformer);

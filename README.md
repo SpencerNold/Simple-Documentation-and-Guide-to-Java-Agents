@@ -1,5 +1,6 @@
 # How to Edit Running Java Programs
 ** Note: Do not use this information to violate terms of service of an application **
+This repository is meant to serve as step-by-step documentation on Java agents. Agents can be used to load classes at runtime to a program, find byte sizes of Java objects, manipulate classes as they are being used, and in many other interesting and complex ways. This information should ONLY be used in projects which explicitly allow this, or in hobby projects/personal projects.
 <h2>How does this work?</h2>
 What we are going to do is create a Java agent, with specific permissions, attach it to a running jar file, and then from there we can transform the bytecode of classes, whether they have been loaded or not.
 <h2>Creating an Agent</h2>
@@ -51,7 +52,7 @@ public class Loader {
 
 	public static void main(String[] args) throws Exception {
 		for (VirtualMachineDescriptor vmd : VirtualMachine.list()) {
-			if (vmd.displayName().startsWith("name of jar or main class name")) {
+			if (vmd.displayName().startsWith("class.name.Here")) { // Should be the command-line arguments for how the program was started. If with the -cp argument, it will have the main class name, and if it were with the -jar argument, it will contain the name of the Jar file.
 				VirtualMachine vm = VirtualMachine.attach(vmd.id());
 				vm.loadAgent(new File("path/to/your/agent.jar"), "this is the argument that will be passed into your agentmain method");
 				vm.detach();

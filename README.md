@@ -1,8 +1,9 @@
 # How to Edit Running Java Programs
-** Note: Do not use this information to violate terms of service of an application **
-This repository is meant to serve as step-by-step documentation on Java agents. Agents can be used to load classes at runtime to a program, find byte sizes of Java objects, manipulate classes as they are being used, and in many other interesting and complex ways. This information should ONLY be used in projects which explicitly allow this, or in hobby projects/personal projects.
+Java Agents are extremely powerful tools that we, the developers, have access to. Unfortunately the Java documentation is fairly limited, and debugging them is a nightmare. This is meant to serve as a simple guide to getting started with working with Java agents.
+<h2>Getting Started</h2>
+Java agents are part of the sun.* packages, specifically com.sun.tools.attach. These are not explicitly supported, and many JVM implementations do not include all of the libraries. Fortunately, many JDK implementations contain these jars. If your JVM implementation supports agents, the necessary packages can be found in `/lib/tools.jar`
 <h2>How does this work?</h2>
-What we are going to do is create a Java agent, with specific permissions, attach it to a running jar file, and then from there we can transform the bytecode of classes, whether they have been loaded or not.
+In this example, we are going to create a Java agent with specific permissions, attach it to a running jar file, and then from there, transform the bytecode of classes, whether they have been loaded or not.
 <h2>Creating an Agent</h2>
 Creating an agent is fairly simple. We just need to create a Java project with an agent main class. For this, I am going to put the agent main class in a package named example, and name the class Agent.
 

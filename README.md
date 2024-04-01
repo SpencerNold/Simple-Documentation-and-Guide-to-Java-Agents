@@ -55,7 +55,7 @@ public class Loader {
 		for (VirtualMachineDescriptor vmd : VirtualMachine.list()) {
 			if (vmd.displayName().startsWith("class.name.Here")) { // Should be the command-line arguments for how the program was started. If with the -cp argument, it will have the main class name, and if it were with the -jar argument, it will contain the name of the Jar file.
 				VirtualMachine vm = VirtualMachine.attach(vmd.id());
-				vm.loadAgent(new File("path/to/your/agent.jar"), "this is the argument that will be passed into your agentmain method");
+				vm.loadAgent(new File("path/to/your/agent.jar").getAbsolutePath(), "this is the argument that will be passed into your agentmain method");
 				vm.detach();
 			}
 		}
